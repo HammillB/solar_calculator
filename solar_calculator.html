@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Off-Grid Solar System Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sun: #F5A623;
+    --sun-light: #FEF3DC;
+    --sun-dark: #B8770F;
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --teal-dark: #085041;
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-dark: #042C53;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --purple-dark: #26215C;
+    --danger: #A32D2D;
+    --danger-light: #FCEBEB;
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.18);
+    --text: #1A1A18;
+    --text-2: #5A5A56;
+    --text-3: #8C8C88;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--text);
+    color: #fff;
+    padding: 28px 0 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%; transform: translateX(-50%);
+    width: 340px; height: 340px;
+    background: radial-gradient(circle, rgba(245,166,35,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-icon {
+    font-size: 36px;
+    margin-bottom: 6px;
+    display: block;
+    filter: drop-shadow(0 0 12px rgba(245,166,35,0.5));
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 5px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 500;
+    background: rgba(245,166,35,0.18);
+    color: var(--sun);
+    border: 1px solid rgba(245,166,35,0.3);
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin-top: 10px;
+    letter-spacing: .04em;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 28px 16px 60px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .card-title svg { flex-shrink: 0; }
+
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media(max-width: 520px) {
+    .field-grid, .field-grid.three { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--text-2); font-weight: 500; }
+  .field input, .field select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 8px 11px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus, .field select:focus {
+    outline: none;
+    border-color: var(--sun);
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
+    background: #fff;
+  }
+  .field .hint { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+
+  .zip-row { display: flex; align-items: flex-end; gap: 10px; }
+  .zip-row .field { flex: 1; }
+  .lookup-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 16px;
+    height: 38px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .lookup-btn:hover { background: var(--bg); border-color: var(--sun); }
+
+  .alert {
+    font-size: 13px;
+    padding: 9px 13px;
+    border-radius: var(--radius);
+    margin-top: 10px;
+    display: none;
+    line-height: 1.5;
+  }
+  .alert.show { display: block; }
+  .alert-ok { background: var(--teal-light); color: var(--teal-dark); border: 0.5px solid rgba(29,158,117,0.2); }
+  .alert-err { background: var(--danger-light); color: var(--danger); border: 0.5px solid rgba(163,45,45,0.2); }
+
+  .info-box {
+    background: var(--blue-light);
+    border: 0.5px solid rgba(24,95,165,0.15);
+    border-radius: var(--radius);
+    padding: 9px 13px;
+    font-size: 12px;
+    color: var(--blue-dark);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+
+  .calc-btn {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 13px;
+    border: none;
+    border-radius: var(--radius-lg);
+    background: var(--text);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    transition: opacity .15s, transform .1s;
+    margin-top: 4px;
+  }
+  .calc-btn:hover { opacity: 0.88; }
+  .calc-btn:active { transform: scale(0.99); }
+
+  .results { display: none; margin-top: 14px; }
+  .results.show { display: block; }
+
+  .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media(max-width: 400px) { .results-grid { grid-template-columns: 1fr; } }
+
+  .res-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+  }
+  .res-label {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: 5px;
+  }
+  .res-value {
+    font-size: 26px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .res-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; line-height: 1.4; }
+  .val-sun { color: var(--sun-dark); }
+  .val-teal { color: var(--teal); }
+  .val-blue { color: var(--blue); }
+  .val-purple { color: var(--purple); }
+
+  .math-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-top: 0;
+  }
+  .math-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-3);
+    margin-bottom: 12px;
+  }
+  .step {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 0.5px dashed var(--border);
+    font-size: 13px;
+  }
+  .step:last-child { border-bottom: none; font-weight: 500; color: var(--text); }
+  .step-label { color: var(--text-2); flex-shrink: 0; max-width: 55%; }
+  .step-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    text-align: right;
+  }
+
+  .disclaimer {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 14px;
+    line-height: 1.6;
+    padding: 10px 13px;
+    border: 0.5px dashed var(--border-strong);
+    border-radius: var(--radius);
+  }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-3);
+    padding: 0 16px 30px;
+  }
+  footer a { color: var(--text-2); }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="header-icon">☀️</span>
+  <h1>Off-Grid Solar System Calculator</h1>
+  <p>Size your solar panels and battery bank for an off-grid home</p>
+  <div class="badge">Alternative Energy — Corvallis High School</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Location &amp; sun hours
+    </div>
+    <div class="zip-row">
+      <div class="field">
+        <label for="zipcode">US zip code</label>
+        <input type="text" id="zipcode" placeholder="e.g. 59828" maxlength="5" inputmode="numeric">
+      </div>
+      <button class="lookup-btn" onclick="lookupSun()">Look up sun hours</button>
+    </div>
+    <div id="sun-alert" class="alert"></div>
+    <div class="field-grid" style="margin-top:14px">
+      <div class="field">
+        <label for="psh">Peak sun hours / day</label>
+        <input type="number" id="psh" value="4.5" min="1" max="8" step="0.1">
+        <span class="hint">Auto-filled from zip — edit if needed</span>
+      </div>
+      <div class="field">
+        <label for="backup-days">Battery backup days</label>
+        <input type="number" id="backup-days" value="3" min="1" max="7" step="1">
+        <span class="hint">Days of storage without sun</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Daily energy use
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label for="daily-kwh">Average daily use (kWh/day)</label>
+        <input type="number" id="daily-kwh" value="28" min="1" max="300" step="0.5">
+        <span class="hint">Find on your electric bill: kWh/month ÷ 30</span>
+      </div>
+      <div class="field">
+        <label for="house-size">Or estimate by house size</label>
+        <select id="house-size" onchange="estimateKwh()">
+          <option value="">— pick a size —</option>
+          <option value="8">Small cabin (~800 sq ft) · ~8 kWh/day</option>
+          <option value="18">Small home (~1,000 sq ft) · ~18 kWh/day</option>
+          <option value="28">Average home (~1,500 sq ft) · ~28 kWh/day</option>
+          <option value="38">Large home (~2,000 sq ft) · ~38 kWh/day</option>
+          <option value="55">Very large home (~3,000 sq ft) · ~55 kWh/day</option>
+        </select>
+      </div>
+    </div>
+    <div class="info-box">
+      Montana homes average 25–35 kWh/day. No bill? Use the house size estimator or ask your parents what your monthly kWh usage is.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      System settings
+    </div>
+    <div class="field-grid three">
+      <div class="field">
+        <label for="loss-factor">Efficiency / loss factor</label>
+        <select id="loss-factor">
+          <option value="1.15">15% — new system, ideal</option>
+          <option value="1.25" selected>25% — typical system</option>
+          <option value="1.35">35% — older / cloudy region</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dod">Battery type / depth of discharge</label>
+        <select id="dod">
+          <option value="0.5">50% DoD — lead-acid</option>
+          <option value="0.8" selected>80% DoD — LiFePO4</option>
+          <option value="0.9">90% DoD — premium lithium</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sys-voltage">System voltage</label>
+        <select id="sys-voltage">
+          <option value="12">12V — tiny cabin</option>
+          <option value="24">24V — small home</option>
+          <option value="48" selected>48V — full home</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-grid" style="margin-top:12px">
+      <div class="field">
+        <label for="panel-watts">Panel wattage (per panel)</label>
+        <input type="number" id="panel-watts" value="400" min="100" max="700" step="10">
+        <span class="hint">Watts per individual solar panel</span>
+      </div>
+      <div class="field">
+        <label for="battery-kwh">Battery capacity (per unit)</label>
+        <input type="number" id="battery-kwh" value="5" min="0.5" max="20" step="0.5">
+        <span class="hint">kWh per battery or module</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+    Calculate my system
+  </button>
+
+  <div class="results" id="results">
+    <div style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:10px;margin-top:4px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        Your system results
+      </div>
+      <div class="results-grid">
+        <div class="res-card">
+          <div class="res-label">Daily energy use</div>
+          <div class="res-value val-teal" id="r-daily">—</div>
+          <div class="res-sub">kWh per day</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">Solar array size</div>
+          <div class="res-value val-sun" id="r-array">—</div>
+          <div class="res-sub" id="r-array-sub">kW total</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">Panels needed</div>
+          <div class="res-value val-sun" id="r-panels">—</div>
+          <div class="res-sub" id="r-panels-sub">panels</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">Battery bank size</div>
+          <div class="res-value val-blue" id="r-battery">—</div>
+          <div class="res-sub" id="r-battery-sub">kWh total storage needed</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">Battery units</div>
+          <div class="res-value val-blue" id="r-battery-units">—</div>
+          <div class="res-sub" id="r-battery-units-sub">units</div>
+        </div>
+        <div class="res-card">
+          <div class="res-label">Inverter size</div>
+          <div class="res-value val-purple" id="r-inverter">—</div>
+          <div class="res-sub">watts continuous recommended</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="math-card">
+      <div class="math-title">Step-by-step math — show this work in your bid</div>
+      <div class="step">
+        <span class="step-label">Daily energy use</span>
+        <span class="step-val" id="m1">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">With loss factor applied</span>
+        <span class="step-val" id="m2">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">Peak sun hours</span>
+        <span class="step-val" id="m3">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">Required array size (adjusted ÷ PSH)</span>
+        <span class="step-val" id="m4">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">Panels needed (array ÷ panel watts)</span>
+        <span class="step-val" id="m5">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">Battery storage needed (load × days ÷ DoD)</span>
+        <span class="step-val" id="m6">—</span>
+      </div>
+      <div class="step">
+        <span class="step-label">Battery units (storage ÷ unit kWh)</span>
+        <span class="step-val" id="m7">—</span>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      These are estimates for educational purposes. Real installations require a licensed electrician, permit review, and site-specific engineering. Add ~25% safety margin to all values for an actual installation bid.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Built for Alternative Energy class &mdash; Corvallis High School &mdash; Corvallis, MT
+</footer>
+
+<script>
+const sunData = {
+  "590":4.2,"591":4.1,"592":4.2,"593":4.1,"594":4.0,"595":4.1,"596":4.0,"597":4.1,"598":4.2,"599":4.2,
+  "970":4.8,"971":4.7,"972":4.8,"973":4.6,"974":4.7,"975":4.5,"976":4.4,"977":4.6,"978":4.5,"979":4.6,
+  "980":4.6,"981":4.5,"982":4.4,"983":4.3,"984":4.2,"985":4.1,"986":4.0,"988":4.0,"989":3.9,
+  "994":3.8,"995":3.7,"996":3.6,"997":3.7,"998":3.6,"999":3.5,
+  "850":6.5,"851":6.5,"852":6.4,"853":6.3,"854":6.2,"855":6.1,"856":6.0,"857":5.9,"859":5.8,"860":6.5,
+  "863":6.4,"864":6.3,"865":6.2,"870":6.1,"871":6.0,"872":5.9,"873":5.8,"874":5.7,"875":5.6,"877":5.5,
+  "878":5.4,"879":5.3,"880":5.9,"881":5.8,"882":5.7,"883":5.6,"884":5.5,"885":5.4,"889":5.3,
+  "900":5.7,"901":5.6,"902":5.5,"903":5.7,"904":5.6,"905":5.5,"906":5.7,"907":5.6,"908":5.5,"909":5.7,
+  "910":5.6,"911":5.5,"912":5.7,"913":5.6,"914":5.5,"915":5.7,"916":5.6,"917":5.5,"918":5.7,"919":5.6,
+  "920":5.8,"921":5.7,"922":5.8,"923":5.7,"924":5.6,"925":5.5,"926":5.5,"927":5.4,"928":5.3,"930":5.7,
+  "931":5.6,"932":5.5,"933":5.6,"934":5.5,"935":5.4,"936":5.3,"937":5.2,"939":5.1,"940":5.4,"941":5.3,
+  "942":5.5,"943":5.4,"944":5.3,"945":5.4,"946":5.3,"947":5.2,"948":5.4,"949":5.5,
+  "100":4.7,"101":4.6,"102":4.5,"103":4.6,"104":4.7,"105":4.6,"106":4.5,"107":4.4,"108":4.6,"109":4.5,
+  "110":4.7,"111":4.6,"112":4.7,"113":4.6,"114":4.5,"115":4.6,"116":4.7,"117":4.6,"118":4.7,"119":4.6,
+  "700":5.2,"701":5.1,"703":5.0,"704":5.2,"705":5.3,"706":5.2,"707":5.1,"708":5.0,"710":5.1,"711":5.0,
+  "712":5.2,"713":5.1,"714":5.0,"716":5.1,"717":5.0,"718":5.2,"719":5.1,"720":5.0,"721":4.9,"722":5.0,
+  "300":5.3,"301":5.2,"302":5.1,"303":5.0,"304":4.9,"305":5.3,"306":5.2,"307":5.1,"308":5.0,"309":4.9,
+  "310":5.0,"311":4.9,"312":5.0,"313":5.1,"314":5.0,"315":4.9,"316":5.1,"317":5.0,"318":4.9,"319":5.0,
+  "600":4.7,"601":4.6,"602":4.5,"603":4.6,"604":4.5,"605":4.6,"606":4.5,"607":4.4,"608":4.5,"609":4.4,
+  "610":4.5,"611":4.4,"612":4.5,"613":4.4,"614":4.5,"615":4.6,"616":4.5,"617":4.4,"618":4.5,"619":4.4,
+  "550":4.5,"551":4.4,"553":4.3,"554":4.4,"555":4.3,"556":4.2,"557":4.1,"558":4.0,"559":3.9,"560":4.0,
+  "200":4.5,"201":4.4,"202":4.5,"203":4.4,"204":4.3,"205":4.4,"206":4.5,"207":4.4,"208":4.5,
+  "770":5.2,"771":5.1,"772":5.0,"773":5.2,"774":5.1,"775":5.0,"776":5.1,"777":5.0,"778":5.2,"779":5.1,
+  "780":5.2,"781":5.1,"782":5.0,"783":5.2,"784":5.1,"785":5.0,"786":5.2,"787":5.1,"788":5.0,"789":5.2,
+  "798":5.3,"799":5.4
+};
+
+function getRegionPSH(zip) {
+  if (!zip || zip.length < 3) return null;
+  const p3 = zip.substring(0, 3);
+  const p2 = zip.substring(0, 2);
+  if (sunData[p3]) return sunData[p3];
+  for (const k in sunData) { if (k.startsWith(p2)) return sunData[k]; }
+  return null;
+}
+
+function lookupSun() {
+  const zip = document.getElementById('zipcode').value.trim();
+  const el = document.getElementById('sun-alert');
+  if (zip.length < 5) {
+    el.className = 'alert show alert-err';
+    el.textContent = 'Please enter a full 5-digit zip code.';
+    return;
+  }
+  const psh = getRegionPSH(zip);
+  if (psh) {
+    document.getElementById('psh').value = psh;
+    el.className = 'alert show alert-ok';
+    el.textContent = '☀ Found: ~' + psh + ' peak sun hours/day for zip ' + zip + '. Value loaded below — edit if needed.';
+  } else {
+    el.className = 'alert show alert-err';
+    el.textContent = 'Zip code not found. Enter peak sun hours manually. Montana average: 4.0–4.8 hrs/day.';
+  }
+}
+
+function estimateKwh() {
+  const val = document.getElementById('house-size').value;
+  if (val) document.getElementById('daily-kwh').value = val;
+}
+
+function calculate() {
+  const dailyKwh = parseFloat(document.getElementById('daily-kwh').value) || 28;
+  const psh = parseFloat(document.getElementById('psh').value) || 4.5;
+  const lossFactor = parseFloat(document.getElementById('loss-factor').value) || 1.25;
+  const dod = parseFloat(document.getElementById('dod').value) || 0.8;
+  const backupDays = parseInt(document.getElementById('backup-days').value) || 3;
+  const panelW = parseInt(document.getElementById('panel-watts').value) || 400;
+  const battKwh = parseFloat(document.getElementById('battery-kwh').value) || 5;
+
+  const adjustedKwh = dailyKwh * lossFactor;
+  const arraykW = adjustedKwh / psh;
+  const panelCount = Math.ceil(arraykW * 1000 / panelW);
+  const actualArraykW = panelCount * panelW / 1000;
+  const batteryNeeded = dailyKwh * backupDays / dod;
+  const batteryUnits = Math.ceil(batteryNeeded / battKwh);
+  const inverterW = Math.ceil(actualArraykW * 1000 * 1.25 / 100) * 100;
+
+  document.getElementById('r-daily').textContent = dailyKwh.toFixed(1);
+  document.getElementById('r-array').textContent = actualArraykW.toFixed(2);
+  document.getElementById('r-array-sub').textContent = 'kW (' + panelCount + ' × ' + panelW + 'W panels)';
+  document.getElementById('r-panels').textContent = panelCount;
+  document.getElementById('r-panels-sub').textContent = 'panels × ' + panelW + 'W each';
+  document.getElementById('r-battery').textContent = batteryNeeded.toFixed(1);
+  document.getElementById('r-battery-sub').textContent = 'kWh needed (' + backupDays + '-day backup)';
+  document.getElementById('r-battery-units').textContent = batteryUnits;
+  document.getElementById('r-battery-units-sub').textContent = 'units × ' + battKwh + ' kWh each';
+  document.getElementById('r-inverter').textContent = inverterW.toLocaleString();
+
+  document.getElementById('m1').textContent = dailyKwh.toFixed(1) + ' kWh/day';
+  document.getElementById('m2').textContent = dailyKwh.toFixed(1) + ' × ' + lossFactor + ' = ' + adjustedKwh.toFixed(2) + ' kWh';
+  document.getElementById('m3').textContent = psh + ' hrs/day';
+  document.getElementById('m4').textContent = adjustedKwh.toFixed(2) + ' ÷ ' + psh + ' = ' + arraykW.toFixed(3) + ' kW';
+  document.getElementById('m5').textContent = arraykW.toFixed(3) + ' kW ÷ ' + panelW + 'W = ' + panelCount + ' panels';
+  document.getElementById('m6').textContent = dailyKwh.toFixed(1) + ' × ' + backupDays + ' ÷ ' + dod + ' = ' + batteryNeeded.toFixed(2) + ' kWh';
+  document.getElementById('m7').textContent = batteryNeeded.toFixed(2) + ' ÷ ' + battKwh + ' = ' + batteryUnits + ' units';
+
+  document.getElementById('results').className = 'results show';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('zipcode').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') lookupSun();
+});
+</script>
+</body>
+</html>
